@@ -1,0 +1,118 @@
+name: Daily Data Validation
+
+on:
+  # Run every day at 6 AM Brasilia time (9 AM UTC)
+  schedule:
+    - cron: '0 9 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      autofix:
+        description: 'Auto-fix inconsistencies'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  validate:
+    name: Validate CartPanda vs Supabase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run validation
+        id: validation
+        run: |
+          # Determine if autofix should be enabled
+          AUTOFIX="${{ github.event.inputs.autofix || 'true' }}"
+
+          # Construct URL with autofix parameter
+          if [ "$AUTOFIX" = "true" ]; then
+            URL="https://dashboard-eight-alpha-74.vercel.app/api/validate?autofix=true"
+          else
+            URL="https://dashboard-eight-alpha-74.vercel.app/api/validate"
+          fi
+
+          echo "Calling validation endpoint: $URL"
+
+          # Call validation API
+          RESPONSE=$(curl -s -w "\n%{http_code}" "$URL")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "$BODY" | jq '.' || echo "$BODY"
+
+          # Save response for next steps
+          echo "$BODY" > validation_report.json
+          echo "http_code=$HTTP_CODE" >> $GITHUB_OUTPUT
+
+          # Extract key metrics
+          ACCURACY=$(echo "$BODY" | jq -r '.accuracy // 0')
+          STATUS=$(echo "$BODY" | jq -r '.status // "UNKNOWN"')
+          MISSING=$(echo "$BODY" | jq -r '.inconsistencies.missing // 0')
+
+          echo "accuracy=$ACCURACY" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "missing=$MISSING" >> $GITHUB_OUTPUT
+
+      - name: Check validation status
+        if: steps.validation.outputs.status == 'CRITICAL'
+        run: |
+          echo "::error::Validation returned CRITICAL status!"
+          echo "Accuracy: ${{ steps.validation.outputs.accuracy }}%"
+          echo "Missing orders: ${{ steps.validation.outputs.missing }}"
+          exit 1
+
+      - name: Warning notification
+        if: steps.validation.outputs.status == 'WARNING'
+        run: |
+          echo "::warning::Validation returned WARNING status"
+          echo "Accuracy: ${{ steps.validation.outputs.accuracy }}%"
+          echo "Missing orders: ${{ steps.validation.outputs.missing }}"
+
+      - name: Success notification
+        if: steps.validation.outputs.status == 'OK'
+        run: |
+          echo "::notice::Validation passed successfully!"
+          echo "Accuracy: ${{ steps.validation.outputs.accuracy }}%"
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-${{ github.run_number }}
+          path: validation_report.json
+          retention-days: 30
+
+  full-sync-on-failure:
+    name: Full Sync (if validation failed)
+    runs-on: ubuntu-latest
+    needs: validate
+    if: failure() && needs.validate.outputs.status == 'CRITICAL'
+
+    steps:
+      - name: Trigger full sync
+        run: |
+          echo "Validation failed critically. Triggering full sync..."
+
+          # Call sync API to force full synchronization
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://dashboard-eight-alpha-74.vercel.app/api/sync" \
+            -H "Content-Type: application/json")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Sync HTTP Status: $HTTP_CODE"
+          echo "$BODY" | jq '.' || echo "$BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Full sync failed with status $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "::notice::Full sync completed successfully"

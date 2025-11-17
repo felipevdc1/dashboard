@@ -1,0 +1,34 @@
+name: Sync CartPanda to Supabase
+
+on:
+  schedule:
+    # Roda a cada 15 minutos
+    - cron: '*/15 * * * *'
+
+  # Permite executar manualmente
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run sync script
+        env:
+          NEXT_PUBLIC_CARTPANDA_API_URL: ${{ secrets.CARTPANDA_API_URL }}
+          CARTPANDA_API_TOKEN: ${{ secrets.CARTPANDA_API_TOKEN }}
+          CARTPANDA_STORE_NAME: ${{ secrets.CARTPANDA_STORE_NAME }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npx tsx scripts/direct-sync.ts

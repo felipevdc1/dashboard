@@ -1,0 +1,56 @@
+name: Hourly Incremental Sync
+
+# Runs every 6 hours as backup for webhook failures
+# Acts as Layer 2 in the 3-layer update strategy
+
+on:
+  schedule:
+    # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+    # (21:00, 03:00, 09:00, 15:00 Brasília UTC-3)
+    - cron: '0 */6 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  incremental-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # Should complete in < 5 minutes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run incremental sync
+        env:
+          NEXT_PUBLIC_CARTPANDA_API_URL: ${{ secrets.NEXT_PUBLIC_CARTPANDA_API_URL }}
+          CARTPANDA_API_TOKEN: ${{ secrets.CARTPANDA_API_TOKEN }}
+          CARTPANDA_STORE_NAME: ${{ secrets.CARTPANDA_STORE_NAME }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          echo "🔄 Starting incremental sync (last 24 hours)..."
+          npx tsx scripts/incremental-sync.ts
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Incremental sync completed successfully"
+          else
+            echo "❌ Incremental sync failed"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Incremental sync failed at $(date)"
+          echo "This might indicate API issues or webhook failures"
+          echo "Dashboard data may be slightly outdated"

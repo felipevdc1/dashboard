@@ -1,0 +1,41 @@
+{
+  "name": "nutrimetrics-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "sync": "npx tsx scripts/direct-sync.ts",
+    "sync:full": "npx tsx scripts/full-sync.ts",
+    "sync:incremental": "npx tsx scripts/incremental-sync.ts",
+    "validate": "npx tsx scripts/validate-sync.ts",
+    "deploy": "./setup-vercel.sh",
+    "deploy:quick": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.81.1",
+    "autoprefixer": "^10.4.22",
+    "chart.js": "^4.4.1",
+    "next": "^15.1.4",
+    "papaparse": "^5.5.3",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.3.1",
+    "swr": "^2.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/papaparse": "^5.5.0",
+    "@types/react": "^18.3.26",
+    "@types/react-dom": "^18.3.7",
+    "dotenv": "^17.2.3",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.4",
+    "postcss": "^8",
+    "supabase": "^2.58.5",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
