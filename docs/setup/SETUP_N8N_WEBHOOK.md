@@ -27,13 +27,17 @@ Este guia configura **sync instantâneo** via webhooks do CartPanda usando n8n.
 
 ## 🚀 Passo 1: Criar Workflow no n8n
 
-### 1.1 Importar Workflow JSON
+### 1.1 Importar Workflow JSON (CORRIGIDO)
 
-Cole este JSON no n8n (Menu → Import from clipboard):
+**IMPORTANTE:** Use a versão corrigida do workflow que resolve o erro 405!
+
+O arquivo está em: `/config/webhook-n8n.json`
+
+Ou cole este JSON no n8n (Menu → Import from clipboard):
 
 ```json
 {
-  "name": "CartPanda Sync Automático",
+  "name": "CartPanda Sync Automático (CORRIGIDO)",
   "nodes": [
     {
       "parameters": {
@@ -54,15 +58,26 @@ Cole este JSON no n8n (Menu → Import from clipboard):
         "url": "https://dashboard-eight-alpha-74.vercel.app/api/sync/incremental",
         "authentication": "none",
         "requestMethod": "POST",
-        "jsonParameters": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "options": {
-          "timeout": 180000
+          "timeout": 180000,
+          "redirect": {
+            "redirect": {}
+          }
         }
       },
       "id": "call-sync-api",
       "name": "Disparar Sync Incremental",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
+      "typeVersion": 4.1,
       "position": [450, 300]
     },
     {
@@ -156,6 +171,12 @@ Cole este JSON no n8n (Menu → Import from clipboard):
   "id": "1"
 }
 ```
+
+**Mudanças da versão corrigida:**
+- ✅ `typeVersion: 4.1` (versão mais recente do HTTP Request node)
+- ✅ `sendHeaders: true` + `Content-Type: application/json` (header explícito)
+- ✅ Configuração de redirect adicionada
+- ✅ Resolve erro 405 "Method not allowed"
 
 ### 1.2 Ativar Workflow
 
@@ -308,6 +329,49 @@ Agora você tem:
 ---
 
 ## 🆘 Troubleshooting
+
+### Erro 405 "Method not allowed" (RESOLVIDO)
+
+**Sintoma:**
+```json
+{
+  "errorMessage": "Method not allowed - please check you are using the right HTTP method",
+  "httpCode": "405"
+}
+```
+
+**Causa:** O nó HTTP Request no n8n estava usando uma versão antiga (typeVersion 3) sem headers explícitos.
+
+**Solução (3 passos):**
+
+1. **Deletar o workflow atual** e reimportar a versão CORRIGIDA de `/config/webhook-n8n.json`
+
+2. **OU** editar manualmente o nó "Disparar Sync Incremental":
+   - Clique no nó "Disparar Sync Incremental"
+   - Verifique se **Method** está em "POST"
+   - Em **Headers**, clique em "Add Header":
+     - Name: `Content-Type`
+     - Value: `application/json`
+   - Em **Options** → **Timeout**: `180000`
+   - Salve o workflow
+
+3. **Testar** o webhook novamente:
+   ```bash
+   curl -X POST https://n8n.seudominio.com/webhook/cartpanda-webhook \
+     -H "Content-Type: application/json" \
+     -d '{"event":"order.created","data":{"id":123}}'
+   ```
+
+**Resultado esperado:**
+```json
+{
+  "success": true,
+  "message": "Sync triggered",
+  "synced": 11
+}
+```
+
+---
 
 ### Webhook não dispara
 

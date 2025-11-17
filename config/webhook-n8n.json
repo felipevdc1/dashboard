@@ -1,0 +1,134 @@
+{
+  "name": "CartPanda Sync Automático (CORRIGIDO)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cartpanda-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook CartPanda",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "cartpanda-sync"
+    },
+    {
+      "parameters": {
+        "url": "https://dashboard-eight-alpha-74.vercel.app/api/sync/incremental",
+        "authentication": "none",
+        "requestMethod": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 180000,
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "id": "call-sync-api",
+      "name": "Disparar Sync Incremental",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "check-success",
+      "name": "Sync OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Sync triggered\", \"synced\": $json.stats.synced } }}"
+      },
+      "id": "response-success",
+      "name": "Resposta Sucesso",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": $json.error || 'Unknown error' } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "response-error",
+      "name": "Resposta Erro",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 400]
+    }
+  ],
+  "connections": {
+    "Webhook CartPanda": {
+      "main": [
+        [
+          {
+            "node": "Disparar Sync Incremental",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disparar Sync Incremental": {
+      "main": [
+        [
+          {
+            "node": "Sync OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync OK?": {
+      "main": [
+        [
+          {
+            "node": "Resposta Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1",
+  "id": "1"
+}
