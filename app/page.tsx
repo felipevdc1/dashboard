@@ -70,6 +70,7 @@ function useCacheTimer(expiresAt: number | null | undefined) {
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange>(getTodayRange());
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Use SWR for data fetching with automatic cache
   const { data, error, isLoading, mutate } = useSWR<DashboardData>(
@@ -89,10 +90,34 @@ export default function Dashboard() {
     mutate(undefined, { revalidate: true }); // Force revalidation, bypass cache
   };
 
-  const forceRefreshData = () => {
-    // Add force_refresh query param to bypass cache completely
-    const url = `/api/metrics?start_date=${dateRange.startDate}&end_date=${dateRange.endDate}&force_refresh=true`;
-    mutate(fetch(url).then(res => res.json()), { revalidate: false });
+  const forceRefreshData = async () => {
+    setIsSyncing(true);
+
+    try {
+      // Step 1: Trigger incremental sync (last 24 hours)
+      const syncResponse = await fetch('/api/sync/incremental', {
+        method: 'POST',
+      });
+
+      const syncResult = await syncResponse.json();
+
+      if (!syncResult.success) {
+        throw new Error(syncResult.message || 'Sync failed');
+      }
+
+      // Step 2: Refresh dashboard data with force_refresh to bypass cache
+      const url = `/api/metrics?start_date=${dateRange.startDate}&end_date=${dateRange.endDate}&force_refresh=true`;
+      await mutate(fetch(url).then(res => res.json()), { revalidate: false });
+
+      console.log('Incremental sync completed:', syncResult.stats);
+    } catch (error) {
+      console.error('Force refresh failed:', error);
+      // Still try to refresh data even if sync failed
+      const url = `/api/metrics?start_date=${dateRange.startDate}&end_date=${dateRange.endDate}&force_refresh=true`;
+      await mutate(fetch(url).then(res => res.json()), { revalidate: false });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   if (error) {
@@ -169,10 +194,16 @@ export default function Dashboard() {
 
               <button
                 onClick={forceRefreshData}
-                className="glass glass-hover rounded-lg px-4 py-2 text-sm flex items-center gap-2 bg-primary-600/20 hover:bg-primary-600/30"
-                title="Forçar atualização completa (bypass cache)"
+                disabled={isSyncing}
+                className={`glass glass-hover rounded-lg px-4 py-2 text-sm flex items-center gap-2 bg-primary-600/20 hover:bg-primary-600/30 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isSyncing ? 'animate-pulse' : ''
+                }`}
+                title="Sincronizar últimas 24h do CartPanda (rápido: ~2-5min)"
               >
-                <span>⚡</span> Forçar
+                <span className={isSyncing ? 'animate-spin' : ''}>
+                  {isSyncing ? '🔄' : '⚡'}
+                </span>
+                {isSyncing ? 'Sincronizando...' : 'Forçar Sync'}
               </button>
             </div>
           </div>
