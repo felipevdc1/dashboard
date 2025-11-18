@@ -43,20 +43,44 @@ async function fetchOrdersByDateRange(startDate: string, endDate: string) {
 }
 
 /**
- * Fetch all orders (for monthly comparison chart)
+ * Fetch orders for monthly comparison (current + previous month only)
+ * Avoids Supabase's 1000 record default limit by fetching specific date range
  */
-async function fetchAllOrders() {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false });
+async function fetchOrdersForMonthlyComparison(
+  currentMonthStart: string,
+  previousMonthStart: string
+) {
+  // Fetch orders from the start of previous month until now
+  // Using pagination to get ALL orders (Supabase has 1000 record default limit)
+  let allOrders: any[] = [];
+  let rangeStart = 0;
+  const rangeSize = 1000;
+  let hasMore = true;
 
-  if (error) {
-    console.error('Supabase query error:', error);
-    throw new Error(`Failed to fetch all orders: ${error.message}`);
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('created_at', `${previousMonthStart}T00:00:00-03:00`)
+      .order('created_at', { ascending: false })
+      .range(rangeStart, rangeStart + rangeSize - 1);
+
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw new Error(`Failed to fetch orders for monthly comparison: ${error.message}`);
+    }
+
+    if (data && data.length > 0) {
+      allOrders = allOrders.concat(data);
+      rangeStart += rangeSize;
+      hasMore = data.length === rangeSize; // Continue if we got a full page
+    } else {
+      hasMore = false;
+    }
   }
 
-  return data || [];
+  console.log(`✅ Fetched ${allOrders.length} orders for monthly comparison (${Math.ceil(allOrders.length / rangeSize)} pages)`);
+  return allOrders;
 }
 
 /**
@@ -83,9 +107,13 @@ export async function calculateDashboardMetrics(
   const previousOrders = await fetchOrdersByDateRange(previousStartDate, previousEndDate);
   console.log(`✅ Previous period orders: ${previousOrders.length}`);
 
-  // Fetch all orders for monthly comparison
-  const allOrders = await fetchAllOrders();
-  console.log(`✅ All orders: ${allOrders.length}`);
+  // Fetch orders for monthly comparison (current + previous month only)
+  // This avoids Supabase's 1000 record limit by using date range filtering
+  const monthRanges = getCurrentAndPreviousMonthRanges();
+  const allOrders = await fetchOrdersForMonthlyComparison(
+    monthRanges.currentMonth.startDate,
+    monthRanges.previousMonth.startDate
+  );
 
   const queryDuration = Date.now() - startTime;
   console.log(`⚡ Supabase queries completed in ${queryDuration}ms`);
@@ -115,7 +143,6 @@ export async function calculateDashboardMetrics(
   const ticketTrend = calculateDailyTrend(currentOrders, 'average');
 
   // Monthly comparison
-  const monthRanges = getCurrentAndPreviousMonthRanges();
   const monthlyComparison = calculateMonthlyComparison(
     allOrders,
     monthRanges.currentMonth,
