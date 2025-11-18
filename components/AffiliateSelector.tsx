@@ -2,11 +2,13 @@
  * Affiliate Selector Component
  *
  * Dropdown with search functionality to select any affiliate from the database
+ * Uses React Portal to escape stacking context issues
  */
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import useSWR from 'swr';
 import type { AffiliateMetrics } from '@/lib/affiliates/types';
 
@@ -21,6 +23,21 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Calculate dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8, // 8px gap below button
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
 
   // Debounce search input (300ms)
   useEffect(() => {
@@ -61,8 +78,9 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
     <div className="relative">
       {/* Trigger Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="glass glass-hover rounded-lg px-4 py-2 text-sm flex items-center gap-2 min-w-[250px] justify-between"
+        className="glass glass-hover rounded-lg px-4 py-2 text-sm flex items-center gap-2 min-w-[250px] justify-between w-full"
       >
         <span className="flex items-center gap-2">
           <span>👤</span>
@@ -80,12 +98,12 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
         <span className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
-      {/* Dropdown */}
-      {isOpen && (
+      {/* Portal: Render dropdown in document.body to escape stacking context */}
+      {isOpen && typeof window !== 'undefined' && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[9998] bg-black/20"
             onClick={() => {
               setIsOpen(false);
               setSearchTerm('');
@@ -93,7 +111,14 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
           />
 
           {/* Dropdown Content */}
-          <div className="absolute left-0 mt-2 w-96 glass rounded-xl shadow-2xl z-[100] overflow-hidden animate-fade-in">
+          <div
+            className="fixed z-[9999] w-96 glass rounded-xl shadow-2xl overflow-hidden animate-fade-in"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              minWidth: `${dropdownPosition.width}px`
+            }}
+          >
             {/* Search Input */}
             <div className="p-4 border-b border-gray-700/50">
               <input
@@ -184,7 +209,8 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
