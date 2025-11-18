@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
 
       {/* Content */}
       {!selectedAffiliateId && (
-        <div className="glass rounded-2xl p-12 border border-gray-800/50 text-center relative z-0">
+        <div className="glass rounded-2xl p-12 border border-gray-800/50 text-center">
           <div className="text-6xl mb-4">👤</div>
           <h2 className="text-2xl font-bold mb-2">Selecione um afiliado</h2>
           <p className="text-gray-400">
