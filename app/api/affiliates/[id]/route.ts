@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cartPandaClient } from '@/lib/cartpanda/client';
+import { supabase } from '@/lib/supabase';
 import { memoryCache } from '@/lib/cache';
 import {
   processAffiliateMetrics,
@@ -14,7 +15,7 @@ import {
   buildActivityHeatmap,
 } from '@/lib/affiliates/utils';
 import { affiliateLogger, cacheLogger, logger } from '@/lib/logger';
-import type { AffiliateDetails, AffiliateMonthlyMetrics } from '@/lib/affiliates/types';
+import type { AffiliateDetails, AffiliateMonthlyMetrics, AffiliateAnalyticsResponse, AffiliateOrderItem } from '@/lib/affiliates/types';
 import { parsePrice, isOrderPaid, extractLocalDate } from '@/lib/cartpanda/utils';
 import type { CartPandaOrder } from '@/lib/cartpanda/types';
 
@@ -32,12 +33,18 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('start_date') || '';
     const endDate = searchParams.get('end_date') || '';
+    const includeOrders = searchParams.get('include_orders') === 'true'; // New parameter for analytics page
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
     // Create cache key
-    const cacheKey = `affiliate:${affiliateId}:${startDate}:${endDate}`;
+    const cacheKey = `affiliate:${affiliateId}:${startDate}:${endDate}:${includeOrders}:${page}`;
 
     // Check cache
-    const cached = memoryCache.get<AffiliateDetails>(cacheKey);
+    const cached = includeOrders
+      ? memoryCache.get<AffiliateAnalyticsResponse>(cacheKey)
+      : memoryCache.get<AffiliateDetails>(cacheKey);
+
     if (cached) {
       cacheLogger.debug(`Cache HIT for affiliate details`, { affiliateId });
       return NextResponse.json({
@@ -52,19 +59,29 @@ export async function GET(
 
     cacheLogger.debug(`Cache MISS for affiliate details`, { affiliateId });
 
-    // Fetch orders from CartPanda
-    const allOrders = await cartPandaClient.getAllOrders();
+    // Fetch orders from Supabase (faster than CartPanda API)
+    let query = supabase
+      .from('orders')
+      .select('*')
+      .or(`affiliate_email.eq.${affiliateId},affiliate_slug.eq.${affiliateId},afid.eq.${affiliateId}`);
 
-    // Filter orders for this affiliate (check all affiliate identifier fields)
-    let affiliateOrders = allOrders.filter(
-      order =>
-        order.afid === affiliateId ||
-        order.affiliate_slug === affiliateId ||
-        order.affiliate_email === affiliateId ||
-        order.affiliate_name === affiliateId
-    );
+    // Apply date filter if provided
+    if (startDate && endDate) {
+      query = query
+        .gte('created_at', `${startDate}T00:00:00-03:00`)
+        .lte('created_at', `${endDate}T23:59:59-03:00`);
+    }
 
-    if (affiliateOrders.length === 0) {
+    query = query.order('created_at', { ascending: false });
+
+    const { data: affiliateOrders, error } = await query;
+
+    if (error) {
+      affiliateLogger.error('Error fetching orders from Supabase', error);
+      throw new Error(`Failed to fetch orders: ${error.message}`);
+    }
+
+    if (!affiliateOrders || affiliateOrders.length === 0) {
       return NextResponse.json(
         {
           error: 'Affiliate not found',
@@ -72,14 +89,6 @@ export async function GET(
         },
         { status: 404 }
       );
-    }
-
-    // Filter by date range if specified
-    if (startDate && endDate) {
-      affiliateOrders = affiliateOrders.filter(order => {
-        const orderDate = extractLocalDate(order.created_at);
-        return orderDate >= startDate && orderDate <= endDate;
-      });
     }
 
     affiliateLogger.debug(`Found ${affiliateOrders.length} orders for affiliate`, { affiliateId });
@@ -122,6 +131,68 @@ export async function GET(
     };
 
     const duration = Date.now() - startTime;
+
+    // If include_orders is true, return analytics response with orders list
+    if (includeOrders) {
+      // Calculate summary stats
+      const paidOrders = affiliateOrders.filter((o: any) => o.financial_status === 3);
+      const refundedOrders = affiliateOrders.filter((o: any) => o.refunds && o.refunds.length > 0);
+      const chargebackOrders = affiliateOrders.filter((o: any) => o.chargeback_received === 1);
+      const pendingOrders = affiliateOrders.filter((o: any) => o.financial_status !== 3 && (!o.refunds || o.refunds.length === 0) && o.chargeback_received !== 1);
+
+      const summary = {
+        total: affiliateOrders.length,
+        paid: paidOrders.length,
+        refunded: refundedOrders.length,
+        chargebacks: chargebackOrders.length,
+        pending: pendingOrders.length,
+        revenue: paidOrders.reduce((sum: number, o: any) => sum + parsePrice(o.total_price), 0),
+        commission: paidOrders.reduce((sum: number, o: any) => sum + parsePrice(o.affiliate_amount || '0'), 0),
+      };
+
+      const refunds = {
+        count: refundedOrders.length,
+        total: refundedOrders.reduce((sum: number, o: any) => sum + parsePrice(o.total_price), 0),
+        orders: refundedOrders.slice(0, limit),
+      };
+
+      const chargebacks = {
+        count: chargebackOrders.length,
+        total: chargebackOrders.reduce((sum: number, o: any) => sum + parsePrice(o.total_price), 0),
+        orders: chargebackOrders.slice(0, limit),
+      };
+
+      // Paginate orders
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      const paginatedOrders = affiliateOrders.slice(start, end);
+
+      const analyticsResponse: AffiliateAnalyticsResponse = {
+        affiliate: details,
+        orders: paginatedOrders as any,
+        summary,
+        refunds,
+        chargebacks,
+        pagination: {
+          total: affiliateOrders.length,
+          page,
+          limit,
+          hasMore: end < affiliateOrders.length,
+        },
+        _meta: {
+          cached: false,
+          duration,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      // Cache the response
+      memoryCache.set(cacheKey, analyticsResponse);
+
+      affiliateLogger.info(`Processed affiliate analytics in ${duration}ms`, { affiliateId });
+
+      return NextResponse.json(analyticsResponse);
+    }
 
     // Cache the response
     memoryCache.set(cacheKey, details);

@@ -207,3 +207,78 @@ export interface AffiliateExportConfig {
   filters: AffiliateFilters;
   includeDetails?: boolean;
 }
+
+/**
+ * Response from /api/affiliates/[id] with orders list
+ * Used for detailed analytics page
+ */
+export interface AffiliateAnalyticsResponse {
+  affiliate: AffiliateDetails;
+  orders: AffiliateOrderItem[];
+  summary: {
+    total: number;
+    paid: number;
+    refunded: number;
+    chargebacks: number;
+    pending: number;
+    revenue: number;
+    commission: number;
+  };
+  refunds: {
+    count: number;
+    total: number;
+    orders: AffiliateOrderItem[];
+  };
+  chargebacks: {
+    count: number;
+    total: number;
+    orders: AffiliateOrderItem[];
+  };
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  };
+  _meta: {
+    cached: boolean;
+    duration: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Simplified order item for affiliate analytics
+ */
+export interface AffiliateOrderItem {
+  id: number;
+  order_number: string;
+  created_at: string;
+  status: string; // "Paid", "Refunded", "Chargeback", etc
+  financial_status: number;
+  total_price: string;
+  affiliate_amount: string;
+  customer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  line_items: {
+    id: number;
+    title: string;
+    quantity: number;
+    price: string;
+  }[];
+  refunds?: any[];
+  chargeback_received?: number;
+}
+
+/**
+ * Filters for order list in analytics page
+ */
+export interface OrderStatusFilter {
+  paid?: boolean;
+  refunded?: boolean;
+  chargebacks?: boolean;
+  pending?: boolean;
+}

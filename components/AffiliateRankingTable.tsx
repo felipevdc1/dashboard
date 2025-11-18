@@ -4,6 +4,7 @@
  * Displays a sortable table of all affiliates with key metrics
  */
 
+import Link from 'next/link';
 import type { AffiliateMetrics } from '@/lib/affiliates/types';
 import { formatCurrency } from '@/lib/cartpanda/utils';
 
@@ -61,12 +62,15 @@ export default function AffiliateRankingTable({
               <th className="text-center py-4 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Produtos
               </th>
+              <th className="text-center py-4 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Ações
+              </th>
             </tr>
           </thead>
           <tbody>
             {affiliates.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-gray-500">
+                <td colSpan={10} className="text-center py-8 text-gray-500">
                   Nenhum afiliado encontrado
                 </td>
               </tr>
@@ -167,6 +171,17 @@ export default function AffiliateRankingTable({
                   {/* Products */}
                   <td className="py-4 px-4 text-center">
                     <div className="text-gray-400">{affiliate.products.total}</div>
+                  </td>
+
+                  {/* Actions */}
+                  <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/afiliados/${affiliate.id}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium transition-all hover:scale-105"
+                    >
+                      <span>📊</span>
+                      <span>Analytics</span>
+                    </Link>
                   </td>
                 </tr>
               ))

@@ -29,6 +29,11 @@ const navItems: NavItem[] = [
     icon: '👥',
   },
   {
+    label: 'Analytics',
+    href: '/analytics',
+    icon: '📈',
+  },
+  {
     label: 'Ferramentas',
     href: '/ferramentas',
     icon: '🛠️',
