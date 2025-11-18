@@ -250,10 +250,10 @@ export function getCurrentAndPreviousMonthRanges(): {
 } {
   const today = new Date();
 
-  // Current month: 1st day until today
+  // Current month: full month (1st to last day) - for fair comparison with previous month
   const currentMonth = {
     startDate: formatDateString(getStartOfMonth(today)),
-    endDate: formatDateString(today),
+    endDate: formatDateString(getEndOfMonth(today)),
   };
 
   // Previous month: 1st day until last day of previous month

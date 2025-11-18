@@ -26,6 +26,30 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/",
+      "dataRoute": "/index.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/ferramentas": {
       "experimentalBypassFor": [
         {
@@ -73,37 +97,13 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
-    },
-    "/": {
-      "experimentalBypassFor": [
-        {
-          "type": "header",
-          "key": "next-action"
-        },
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "multipart/form-data;.*"
-        }
-      ],
-      "initialRevalidateSeconds": false,
-      "srcRoute": "/",
-      "dataRoute": "/index.rsc",
-      "allowHeader": [
-        "host",
-        "x-matched-path",
-        "x-prerender-revalidate",
-        "x-prerender-revalidate-if-generated",
-        "x-next-revalidated-tags",
-        "x-next-revalidate-tag-token"
-      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "7efb1616ba0f4357718f0b3dc6868568",
-    "previewModeSigningKey": "0b73b01d1dffca595f372f7d6f4572fb61dc13cd8b1137d4e68edcb5a9db0f22",
-    "previewModeEncryptionKey": "fbf00937497f468892a6348417ae1f57fc8a401a5ed2e82d8d57384d4e6bc297"
+    "previewModeId": "2a093955436f69fa308f4da63d9f6e30",
+    "previewModeSigningKey": "2b4bf8adc36f6699f3c42903299e88833fd187f2c119de5002c1b9c0bc0ea319",
+    "previewModeEncryptionKey": "48ae187645d35a3d7962c068eadd9163c929d470b2f5e89ff811d431c8c01f95"
   }
 }

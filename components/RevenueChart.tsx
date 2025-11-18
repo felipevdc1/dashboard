@@ -42,7 +42,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
     labels: data.labels,
     datasets: [
       {
-        label: 'Receita Mês Atual (R$)',
+        label: 'Receita Mês Atual (mês completo)',
         data: data.currentMonth.revenue,
         borderColor: 'rgba(14, 165, 233, 1)',
         backgroundColor: 'rgba(14, 165, 233, 0.1)',
@@ -54,7 +54,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         pointHoverRadius: 4,
       },
       {
-        label: 'Receita Mês Anterior (R$)',
+        label: 'Receita Mês Anterior (mês completo)',
         data: data.previousMonth.revenue,
         borderColor: 'rgba(156, 163, 175, 0.7)',
         backgroundColor: 'rgba(156, 163, 175, 0.1)',
