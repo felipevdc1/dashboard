@@ -27,9 +27,85 @@ Este guia configura **sync instantâneo** via webhooks do CartPanda usando n8n.
 
 ## 🚀 Passo 1: Criar Workflow no n8n
 
-### 1.1 Importar Workflow JSON (CORRIGIDO)
+**⚠️ ATENÇÃO:** Configuração manual é MAIS CONFIÁVEL que importar JSON devido a diferenças de versão do n8n!
 
-**IMPORTANTE:** Use a versão corrigida do workflow que resolve o erro 405!
+### 1.1 Configuração Manual (RECOMENDADO para n8n 1.119.2)
+
+#### Criando Workflow do Zero
+
+1. **Crie Novo Workflow**
+   - Abra n8n
+   - Clique em **"New Workflow"** ou **"+"**
+   - Nomeie: "CartPanda Sync Automático"
+
+2. **Adicione Webhook Trigger**
+   - Clique no **"+"** no canvas
+   - Procure e selecione: **"Webhook"**
+   - Configure:
+     - **HTTP Method:** POST
+     - **Path:** `cartpanda-webhook`
+     - **Respond:** Using 'Respond to Webhook' Node
+   - Clique em **"Execute Node"** para gerar a URL do webhook
+   - **COPIE** a URL gerada (algo como: `https://n8n.seudominio.com/webhook/cartpanda-webhook`)
+
+3. **Adicione HTTP Request Node** ← CRÍTICO!
+   - Clique no **"+"** → Arraste do **Webhook** node
+   - Procure e selecione: **"HTTP Request"**
+   - **IMPORTANTE:** Certifique-se de estar usando a versão mais recente (v4.1+)
+   - Configure EXATAMENTE assim:
+     - **Authentication:** None
+     - **Request Method:** **POST** ← **VERIFIQUE DUAS VEZES!**
+     - **URL:** `https://dashboard-eight-alpha-74.vercel.app/api/sync/incremental`
+     - **Send Headers:** ✅ ON
+       - Clique em **"Add Header"**
+       - **Name:** `Content-Type`
+       - **Value:** `application/json`
+     - **Options:**
+       - Clique em **"Add Option"** → **Timeout**
+       - **Timeout:** `180000` (3 minutos)
+
+4. **Adicione IF Node (Verificar Sucesso)**
+   - Clique no **"+"** → Arraste do **HTTP Request**
+   - Procure e selecione: **"IF"**
+   - Configure:
+     - **Condition Type:** String
+     - **Value 1:** `={{ $json.success }}`
+     - **Operation:** Equal
+     - **Value 2:** `true`
+
+5. **Adicione Respond to Webhook (Sucesso)**
+   - Clique no **"+"** → Arraste da saída **TRUE** do IF
+   - Procure e selecione: **"Respond to Webhook"**
+   - Configure:
+     - **Respond With:** JSON
+     - **Response Body:**
+       ```
+       ={{ { "success": true, "message": "Sync triggered", "synced": $json.stats.synced } }}
+       ```
+
+6. **Adicione Respond to Webhook (Erro)**
+   - Clique no **"+"** → Arraste da saída **FALSE** do IF
+   - Procure e selecione: **"Respond to Webhook"**
+   - Configure:
+     - **Respond With:** JSON
+     - **Response Body:**
+       ```
+       ={{ { "success": false, "error": $json.error || 'Unknown error' } }}
+       ```
+     - **Options:**
+       - Clique em **"Add Option"** → **Response Code**
+       - **Response Code:** `500`
+
+7. **Salve e Ative**
+   - Clique em **"Save"** (canto superior direito)
+   - **ATIVE** o workflow (toggle verde)
+   - Copie novamente a URL do Webhook se necessário
+
+---
+
+### 1.2 Importar Workflow JSON (Alternativa - Pode não funcionar em todas as versões)
+
+**AVISO:** Se a importação não funcionar ou o método aparecer como GET, use a configuração manual acima!
 
 O arquivo está em: `/config/webhook-n8n.json`
 
@@ -330,45 +406,86 @@ Agora você tem:
 
 ## 🆘 Troubleshooting
 
-### Erro 405 "Method not allowed" (RESOLVIDO)
+### Erro 405 "Method not allowed" (MUITO COMUM!)
 
 **Sintoma:**
 ```json
 {
   "errorMessage": "Method not allowed - please check you are using the right HTTP method",
-  "httpCode": "405"
+  "httpCode": "405",
+  "n8nDetails": {
+    "nodeName": "Disparar Sync Incremental",
+    "nodeType": "n8n-nodes-base.httpRequest",
+    "nodeVersion": 4.1
+  }
 }
 ```
 
-**Causa:** O nó HTTP Request no n8n estava usando uma versão antiga (typeVersion 3) sem headers explícitos.
+**Causa Raiz:** O nó HTTP Request está configurado com método **GET** em vez de **POST**!
 
-**Solução (3 passos):**
+Isso acontece quando:
+1. O JSON foi importado mas o n8n não aplicou a configuração corretamente
+2. A versão do n8n (1.119.2) tem incompatibilidades com o JSON exportado
+3. Cache do navegador/n8n está interferindo
 
-1. **Deletar o workflow atual** e reimportar a versão CORRIGIDA de `/config/webhook-n8n.json`
+---
 
-2. **OU** editar manualmente o nó "Disparar Sync Incremental":
-   - Clique no nó "Disparar Sync Incremental"
-   - Verifique se **Method** está em "POST"
-   - Em **Headers**, clique em "Add Header":
-     - Name: `Content-Type`
-     - Value: `application/json`
-   - Em **Options** → **Timeout**: `180000`
-   - Salve o workflow
+#### Solução Passo a Passo:
 
-3. **Testar** o webhook novamente:
+**OPÇÃO 1: Reconfigurar Manualmente (RECOMENDADO)**
+
+1. **Verifique o método atual:**
+   - Abra o workflow no n8n
+   - Clique no nó **"Disparar Sync Incremental"** (HTTP Request)
+   - **OLHE** o campo **"Request Method"**
+   - Se estiver **GET** → está errado! ❌
+   - Deve estar **POST** ✅
+
+2. **Corrija o método:**
+   - No mesmo nó, mude **Request Method** de **GET** para **POST**
+   - Verifique **Send Headers** está **ON**
+   - Verifique se tem header `Content-Type: application/json`
+   - Clique em **"Save"**
+
+3. **Limpe o cache do n8n:**
+   - Feche e abra o workflow novamente
+   - Ou faça **hard refresh** no navegador (Ctrl+Shift+R)
+
+4. **Teste novamente:**
    ```bash
    curl -X POST https://n8n.seudominio.com/webhook/cartpanda-webhook \
      -H "Content-Type: application/json" \
      -d '{"event":"order.created","data":{"id":123}}'
    ```
 
-**Resultado esperado:**
+**OPÇÃO 2: Deletar e Recriar do Zero**
+
+Se a Opção 1 não funcionar:
+1. **Delete o workflow** completamente
+2. Siga a seção **1.1 Configuração Manual** acima
+3. Configure CADA node manualmente, verificando **2x** o método POST
+
+---
+
+**Resultado Esperado (quando funcionar):**
 ```json
 {
   "success": true,
   "message": "Sync triggered",
   "synced": 11
 }
+```
+
+**Screenshot do n8n mostrando POST correto:**
+```
+┌─────────────────────────────────┐
+│  HTTP Request Node              │
+├─────────────────────────────────┤
+│ Request Method: POST  ← CORRETO │
+│ URL: https://dashboard...       │
+│ Send Headers: ✓                 │
+│   Content-Type: application/... │
+└─────────────────────────────────┘
 ```
 
 ---
