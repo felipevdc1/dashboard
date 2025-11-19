@@ -103,6 +103,8 @@ function CancelamentosGenerator() {
   const [reembolsoFile, setReembolsoFile] = useState<File | null>(null);
   const [chargebackFile, setChargebackFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
 
   const handleProcess = async () => {
     if (!reembolsoFile || !chargebackFile) {
@@ -143,6 +145,47 @@ function CancelamentosGenerator() {
       alert('Erro ao processar arquivos. Verifique os arquivos e tente novamente.');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!reembolsoFile || !chargebackFile) {
+      alert('Por favor, selecione ambos os arquivos CSV');
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('reembolso', reembolsoFile);
+      formData.append('chargeback', chargebackFile);
+
+      const response = await fetch('/api/tools/cancelamentos/sync', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao sincronizar dados');
+      }
+
+      setSyncResult(data);
+      alert(
+        `Sincronização concluída!\n\n` +
+        `✅ Inseridos: ${data.stats.inserted}\n` +
+        `✏️ Atualizados: ${data.stats.updated}\n` +
+        `⊘ Pulados: ${data.stats.skipped}\n` +
+        `❌ Erros: ${data.stats.errors}`
+      );
+    } catch (error: any) {
+      console.error('Erro:', error);
+      alert('Erro ao sincronizar dados: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -207,22 +250,70 @@ function CancelamentosGenerator() {
         </div>
       </div>
 
-      {/* Process Button */}
-      <button
-        onClick={handleProcess}
-        disabled={!reembolsoFile || !chargebackFile || isProcessing}
-        className={`
-          w-full px-6 py-4 rounded-xl font-semibold text-white
-          transition-all duration-200
-          ${
-            !reembolsoFile || !chargebackFile || isProcessing
-              ? 'bg-gray-700 cursor-not-allowed opacity-50'
-              : 'bg-gradient-to-r from-primary-600 to-purple-600 hover:shadow-lg hover:shadow-primary-500/25'
-          }
-        `}
-      >
-        {isProcessing ? 'Processando...' : 'Gerar Planilha de Cancelamentos'}
-      </button>
+      {/* Action Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={handleProcess}
+          disabled={!reembolsoFile || !chargebackFile || isProcessing || isSyncing}
+          className={`
+            px-6 py-4 rounded-xl font-semibold text-white
+            transition-all duration-200
+            ${
+              !reembolsoFile || !chargebackFile || isProcessing || isSyncing
+                ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-r from-primary-600 to-purple-600 hover:shadow-lg hover:shadow-primary-500/25'
+            }
+          `}
+        >
+          {isProcessing ? 'Processando...' : '📥 Baixar CSV'}
+        </button>
+
+        <button
+          onClick={handleSync}
+          disabled={!reembolsoFile || !chargebackFile || isProcessing || isSyncing}
+          className={`
+            px-6 py-4 rounded-xl font-semibold text-white
+            transition-all duration-200
+            ${
+              !reembolsoFile || !chargebackFile || isProcessing || isSyncing
+                ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg hover:shadow-green-500/25'
+            }
+          `}
+        >
+          {isSyncing ? 'Sincronizando...' : '🔄 Sincronizar com Banco'}
+        </button>
+      </div>
+
+      {/* Sync Result */}
+      {syncResult && (
+        <div className="mt-4 glass rounded-xl p-4 border border-green-500/30">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">✅</div>
+            <div className="text-sm">
+              <p className="font-semibold mb-2 text-green-400">Sincronização Concluída!</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-gray-300">
+                <div>
+                  <div className="text-xs text-gray-500">Total</div>
+                  <div className="text-lg font-bold">{syncResult.stats.total}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Inseridos</div>
+                  <div className="text-lg font-bold text-green-400">{syncResult.stats.inserted}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Atualizados</div>
+                  <div className="text-lg font-bold text-blue-400">{syncResult.stats.updated}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Erros</div>
+                  <div className="text-lg font-bold text-red-400">{syncResult.stats.errors}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info */}
       <div className="mt-6 glass rounded-xl p-4 border border-blue-500/30">

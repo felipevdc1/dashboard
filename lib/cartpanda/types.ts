@@ -37,12 +37,30 @@ export interface CartPandaOrder {
   affiliate_slug: string;
   affiliate_amount: string;
   // Refund tracking
-  refunds?: any[]; // Array of refund objects
+  refunds?: CartPandaRefund[]; // Array of refund objects
   // Chargeback tracking
   chargeback_received: number; // 0 or 1
   chargeback_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * CartPanda Refund Structure
+ *
+ * IMPORTANT: Este é o formato retornado pela API CartPanda.
+ * O campo 'note' contém notas do AGENTE de suporte, NÃO as notas internas do CSV.
+ */
+export interface CartPandaRefund {
+  id: number;
+  order_id: number;
+  status_id: number; // 3 = processed
+  sub_total: string; // Valor com vírgula (ex: "955.74")
+  total_amount: string; // Valor total reembolsado
+  note: string; // Formato: "Agent: ...\nReason for Contact: ...\nThreat/Request: ...\nResolution: ...\nOffer: ..."
+  created_at: string; // ISO 8601 timestamp
+  updated_at: string;
+  processed_at: string; // Data de processamento do refund
 }
 
 export interface OrderItem {

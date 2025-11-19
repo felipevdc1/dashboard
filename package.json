@@ -11,6 +11,8 @@
     "sync:full": "npx tsx scripts/full-sync.ts",
     "sync:incremental": "npx tsx scripts/incremental-sync.ts",
     "validate": "npx tsx scripts/validate-sync.ts",
+    "import:notes": "npx tsx scripts/import-cartpanda-notes.ts",
+    "investigate:refunds": "npx tsx scripts/investigate-refunds.ts",
     "deploy": "./setup-vercel.sh",
     "deploy:quick": "vercel --prod"
   },
