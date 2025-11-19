@@ -81,7 +81,7 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                     }`}
                   >
                     {activity.type === 'order' ? '+' : '-'}
-                    {formatCurrency(activity.amount)}
+                    {formatCurrency(activity.amount || 0)}
                   </p>
                 </div>
               </div>
