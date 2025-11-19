@@ -370,7 +370,7 @@ export function getRecentActivities(orders: any[]): RecentActivity[] {
         id: `refund-${order.id}`,
         type: 'refund',
         title: `Reembolso solicitado #${order.order_number}`,
-        description: `Cliente: ${customerName} - R$ ${orderAmount.toFixed(2)}`,
+        description: `Cliente: ${customerName} - ${formatCurrency(orderAmount)}`,
         amount: orderAmount,
         timestamp: order.updated_at,
       });
@@ -382,7 +382,7 @@ export function getRecentActivities(orders: any[]): RecentActivity[] {
         id: `chargeback-${order.id}`,
         type: 'chargeback',
         title: `Chargeback recebido #${order.order_number}`,
-        description: `Valor: R$ ${orderAmount.toFixed(2)} - em análise`,
+        description: `Valor: ${formatCurrency(orderAmount)} - em análise`,
         amount: orderAmount,
         timestamp: order.chargeback_at || order.updated_at,
       });

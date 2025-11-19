@@ -1,3 +1,5 @@
+import { formatCurrency } from '@/lib/shared/utils';
+
 type RefundChargebackData = {
   count: number;
   total: number;
@@ -38,10 +40,7 @@ export default function RefundChargebackCards({
 
             <div className="text-right">
               <p className="text-2xl font-bold">
-                {refunds.total.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
+                {formatCurrency(refunds.total)}
               </p>
               <p className="text-xs text-gray-500 mt-1">valor total</p>
             </div>
@@ -91,10 +90,7 @@ export default function RefundChargebackCards({
 
             <div className="text-right">
               <p className="text-2xl font-bold">
-                {chargebacks.total.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
+                {formatCurrency(chargebacks.total)}
               </p>
               <p className="text-xs text-gray-500 mt-1">valor total</p>
             </div>
