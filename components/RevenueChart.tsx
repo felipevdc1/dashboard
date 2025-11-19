@@ -13,6 +13,7 @@ import {
   Filler,
 } from 'chart.js';
 import type { MonthlyComparisonData } from '@/lib/cartpanda/types';
+import { formatCurrency } from '@/lib/shared/utils';
 
 ChartJS.register(
   CategoryScale,
@@ -136,7 +137,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         ticks: {
           color: 'rgba(255, 255, 255, 0.5)',
           callback: function (value: any) {
-            return 'R$ ' + value.toLocaleString('pt-BR');
+            return formatCurrency(value);
           },
         },
       },

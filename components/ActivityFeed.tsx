@@ -1,5 +1,5 @@
 import type { RecentActivity } from '@/lib/cartpanda/types';
-import { getRelativeTime } from '@/lib/cartpanda/utils';
+import { getRelativeTime, formatCurrency } from '@/lib/cartpanda/utils';
 
 type ActivityFeedProps = {
   activities: RecentActivity[];
@@ -81,10 +81,7 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                     }`}
                   >
                     {activity.type === 'order' ? '+' : '-'}
-                    {activity.amount?.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
+                    {formatCurrency(activity.amount)}
                   </p>
                 </div>
               </div>

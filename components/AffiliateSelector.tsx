@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import useSWR from 'swr';
 import type { AffiliateMetrics } from '@/lib/affiliates/types';
+import { formatCurrency } from '@/lib/shared/utils';
 
 interface AffiliateSelectorProps {
   value: string | null; // Selected affiliate ID
@@ -192,7 +193,7 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
                         <div className="text-right">
                           <div className="text-xs text-gray-400">{affiliate.sales.total} vendas</div>
                           <div className="text-xs text-warning-400 font-semibold">
-                            R$ {affiliate.sales.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {formatCurrency(affiliate.sales.revenue)}
                           </div>
                         </div>
                       </div>
