@@ -10,7 +10,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import AffiliateSelector from '@/components/AffiliateSelector';
 import DateRangePicker from '@/components/DateRangePicker';
-import { formatCurrency } from '@/lib/cartpanda/utils';
+import { formatCurrency, parsePrice } from '@/lib/cartpanda/utils';
 import { exportAffiliateAnalytics } from '@/lib/export/affiliates';
 import type { AffiliateMetrics, AffiliateAnalyticsResponse, AffiliateOrderItem } from '@/lib/affiliates/types';
 import type { DateRange } from '@/lib/dateUtils';
@@ -326,11 +326,11 @@ export default function AnalyticsPage() {
                         </div>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <span className="font-semibold">{formatCurrency(parseFloat(order.total_price))}</span>
+                        <span className="font-semibold">{formatCurrency(parsePrice(order.total_price))}</span>
                       </td>
                       <td className="py-4 px-4 text-right">
                         <span className="text-warning-400 font-semibold">
-                          {formatCurrency(parseFloat(order.affiliate_amount || '0'))}
+                          {formatCurrency(parsePrice(order.affiliate_amount || '0'))}
                         </span>
                       </td>
                     </tr>
