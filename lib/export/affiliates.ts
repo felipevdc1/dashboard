@@ -6,6 +6,7 @@
 
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { parsePrice } from '@/lib/shared/utils';
 import type {
   AffiliateDetails,
   AffiliateAnalyticsResponse,
@@ -54,8 +55,8 @@ function convertToExportRows(
         'Cliente Email': order.customer.email,
         'Produto': item.title,
         'Quantidade': item.quantity,
-        'Valor Total': `R$ ${parseFloat(order.total_price).toFixed(2)}`,
-        'Comissão': `R$ ${parseFloat(order.affiliate_amount || '0').toFixed(2)}`,
+        'Valor Total': `R$ ${parsePrice(order.total_price).toFixed(2)}`,
+        'Comissão': `R$ ${parsePrice(order.affiliate_amount || '0').toFixed(2)}`,
       });
     });
   });

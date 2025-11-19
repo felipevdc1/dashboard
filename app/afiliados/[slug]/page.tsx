@@ -14,7 +14,7 @@ import type { AffiliateAnalyticsResponse } from '@/lib/affiliates/types';
 import type { DateRange } from '@/lib/dateUtils';
 import { getThisMonthRange, formatDateRangeDisplay } from '@/lib/dateUtils';
 import DateRangePicker from '@/components/DateRangePicker';
-import { formatCurrency } from '@/lib/shared/utils';
+import { formatCurrency, parsePrice } from '@/lib/shared/utils';
 
 // Fetcher function for SWR
 const fetcher = (url: string) =>
@@ -371,10 +371,10 @@ export default function AffiliateAnalyticsPage({ params }: PageProps) {
                             </span>
                           </td>
                           <td className="p-4 text-right font-medium">
-                            {formatCurrency(parseFloat(order.total_price))}
+                            {formatCurrency(parsePrice(order.total_price))}
                           </td>
                           <td className="p-4 text-right text-primary-400 font-medium">
-                            {formatCurrency(parseFloat(order.affiliate_amount || '0'))}
+                            {formatCurrency(parsePrice(order.affiliate_amount || '0'))}
                           </td>
                         </tr>
                       );
