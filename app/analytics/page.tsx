@@ -41,7 +41,10 @@ export default function AnalyticsPage() {
     ? `/api/affiliates/${selectedAffiliateId}?${queryParams.toString()}`
     : null;
 
-  const { data, error, isLoading } = useSWR<AffiliateAnalyticsResponse>(apiUrl, fetcher);
+  const { data, error, isLoading, mutate } = useSWR<AffiliateAnalyticsResponse>(apiUrl, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
   // Handle affiliate selection
   const handleAffiliateChange = (id: string | null, affiliate: AffiliateMetrics | null) => {
@@ -105,6 +108,14 @@ export default function AnalyticsPage() {
           {selectedAffiliateId && data && (
             <div className="flex gap-2">
               <button
+                onClick={() => mutate()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
+                title="Atualizar dados (força revalidação do cache)"
+              >
+                <span>🔄</span>
+                <span>Atualizar</span>
+              </button>
+              <button
                 onClick={() => handleExport('csv')}
                 className="px-4 py-2 bg-success-600 hover:bg-success-700 text-white rounded-lg text-sm font-medium transition-all hover:scale-105 flex items-center gap-2"
               >
@@ -151,6 +162,24 @@ export default function AnalyticsPage() {
 
       {selectedAffiliateId && data && (
         <>
+          {/* Last Update Info */}
+          {data._meta?.timestamp && (
+            <div className="glass rounded-lg p-3 mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <span>⏰</span>
+                <span>
+                  Última atualização: {new Date(data._meta.timestamp).toLocaleString('pt-BR')}
+                  {data._meta.cached && <span className="ml-2 text-warning-400">(em cache)</span>}
+                </span>
+              </div>
+              {data._meta.duration && (
+                <span className="text-xs text-gray-500">
+                  Carregado em {data._meta.duration}ms
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: Total Revenue */}
