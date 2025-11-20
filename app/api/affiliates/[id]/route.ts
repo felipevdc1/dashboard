@@ -16,7 +16,8 @@ import {
 } from '@/lib/affiliates/utils';
 import { affiliateLogger, cacheLogger, logger } from '@/lib/logger';
 import type { AffiliateDetails, AffiliateMonthlyMetrics, AffiliateAnalyticsResponse, AffiliateOrderItem } from '@/lib/affiliates/types';
-import { parsePrice, isOrderPaid, extractLocalDate, calculateRevenue } from '@/lib/cartpanda/utils';
+import { parsePrice, isOrderPaid, extractLocalDate } from '@/lib/cartpanda/utils';
+import { calculateRevenue } from '@/lib/shared/utils';
 import type { CartPandaOrder } from '@/lib/cartpanda/types';
 
 export async function GET(
