@@ -259,7 +259,13 @@ export default function AnalyticsPage() {
               <div>
                 <h2 className="text-2xl font-bold">Pedidos</h2>
                 <p className="text-sm text-gray-400 mt-1">
-                  {filteredOrders.length} pedidos
+                  Exibindo {filteredOrders.length} de {data.pagination.total} pedidos
+                  {statusFilter !== 'all' && ' (filtrado)'}
+                  {data.pagination.totalPages > 1 && (
+                    <span className="ml-2">
+                      • Página {data.pagination.page} de {data.pagination.totalPages}
+                    </span>
+                  )}
                 </p>
               </div>
 
