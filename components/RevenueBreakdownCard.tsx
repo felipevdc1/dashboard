@@ -46,18 +46,18 @@ export default function RevenueBreakdownCard({
         <p className="text-sm text-gray-400 mb-3">Receita</p>
 
         {/* Main Values: Gross → Net */}
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <div className="flex-1">
-            <p className="text-2xl font-bold">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xl font-bold truncate">
               {formatCurrency(grossRevenue)}
             </p>
             <p className="text-xs text-gray-500 mt-1">Bruta (todas as vendas)</p>
           </div>
 
-          <div className="text-gray-600 text-xl">→</div>
+          <div className="text-gray-600 text-lg flex-shrink-0">→</div>
 
-          <div className="flex-1">
-            <p className="text-2xl font-bold gradient-text">
+          <div className="flex-1 min-w-0">
+            <p className="text-xl font-bold gradient-text truncate">
               {formatCurrency(netRevenue)}
             </p>
             <p className="text-xs text-success-400 mt-1">Líquida (efetiva)</p>
