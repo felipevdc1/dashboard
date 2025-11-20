@@ -18,6 +18,7 @@ import type {
   QualityGrade,
 } from './types';
 import { parsePrice, extractLocalDate, isOrderPaid } from '@/lib/cartpanda/utils';
+import { calculateRevenue } from '@/lib/shared/utils';
 import { affiliateLogger } from '@/lib/logger';
 
 /**
@@ -157,10 +158,8 @@ export function processAffiliateMetrics(
       { affiliateId, totalOrders: orders.length, paidOrders: paidOrders.length }
     );
 
-    const totalRevenue = paidOrders.reduce(
-      (sum, order) => sum + parsePrice(order.total_price),
-      0
-    );
+    // Use calculateRevenue() to exclude refunds and chargebacks (matches analytics API)
+    const totalRevenue = calculateRevenue(orders);
     const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Commission metrics
