@@ -22,7 +22,7 @@ import {
 
 /**
  * Fetch orders from Supabase for a date range
- * Only returns PAID orders (financial_status = 3) to match CartPanda dashboard
+ * Returns ALL orders - filtering for paid/refunded/chargebacks is done by calculateRevenue()
  * Uses Brasilia timezone (UTC-3) for date filtering
  */
 async function fetchOrdersByDateRange(startDate: string, endDate: string) {
@@ -31,7 +31,6 @@ async function fetchOrdersByDateRange(startDate: string, endDate: string) {
     .select('*')
     .gte('created_at', `${startDate}T00:00:00-03:00`) // Brasilia timezone
     .lte('created_at', `${endDate}T23:59:59-03:00`)   // Brasilia timezone
-    .eq('financial_status', 3) // Only PAID orders
     .order('created_at', { ascending: false });
 
   if (error) {
