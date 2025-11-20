@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { DateRange, DatePreset } from '@/lib/dateUtils';
 import {
   getDateRangeByPreset,
@@ -18,6 +19,21 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
   const [showCustom, setShowCustom] = useState(false);
   const [customStart, setCustomStart] = useState(value.startDate);
   const [customEnd, setCustomEnd] = useState(value.endDate);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Calculate dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8, // 8px gap below button
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
 
   const presets: { value: DatePreset; label: string }[] = [
     { value: 'today', label: 'Hoje' },
@@ -53,6 +69,7 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
     <div className="relative">
       {/* Trigger Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="glass glass-hover rounded-lg px-4 py-2 text-sm flex items-center gap-2 min-w-[200px] justify-between"
       >
@@ -64,11 +81,11 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
       </button>
 
       {/* Dropdown */}
-      {isOpen && (
+      {isOpen && typeof window !== 'undefined' && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[9998] bg-black/20"
             onClick={() => {
               setIsOpen(false);
               setShowCustom(false);
@@ -76,7 +93,13 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
           />
 
           {/* Dropdown Content */}
-          <div className="absolute right-0 mt-2 w-80 glass rounded-xl shadow-2xl z-50 overflow-hidden animate-fade-in">
+          <div
+            className="fixed z-[9999] w-80 glass rounded-xl shadow-2xl overflow-hidden animate-fade-in"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+            }}
+          >
             {!showCustom ? (
               // Preset Options
               <div className="p-2">
@@ -158,7 +181,8 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
