@@ -221,7 +221,8 @@ export interface AffiliateAnalyticsResponse {
     refunded: number;
     chargebacks: number;
     pending: number;
-    revenue: number;
+    revenue: number; // Net revenue (excludes refunds/chargebacks)
+    grossRevenue: number; // Gross revenue (all paid orders)
     commission: number;
   };
   refunds: {

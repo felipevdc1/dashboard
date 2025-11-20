@@ -147,7 +147,10 @@ export async function GET(
         refunded: refundedOrders.length,
         chargebacks: chargebackOrders.length,
         pending: pendingOrders.length,
-        revenue: calculateRevenue(affiliateOrders),
+        revenue: calculateRevenue(affiliateOrders), // Net revenue (excludes refunds/chargebacks)
+        grossRevenue: paidOrders.reduce((sum: number, o: any) =>
+          sum + parsePrice(o.total_price), 0
+        ), // Gross revenue (all paid orders, includes refunded/chargebacks)
         commission: affiliateOrders.reduce((sum: number, o: any) => {
           // Skip refunded and chargeback orders for commission too
           if ((o.refunds && o.refunds.length > 0) || o.chargeback_received === 1) {

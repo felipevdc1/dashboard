@@ -10,6 +10,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import AffiliateSelector from '@/components/AffiliateSelector';
 import DateRangePicker from '@/components/DateRangePicker';
+import RevenueBreakdownCard from '@/components/RevenueBreakdownCard';
 import { formatCurrency, parsePrice } from '@/lib/cartpanda/utils';
 import { exportAffiliateAnalytics } from '@/lib/export/affiliates';
 import type { AffiliateMetrics, AffiliateAnalyticsResponse, AffiliateOrderItem } from '@/lib/affiliates/types';
@@ -183,21 +184,14 @@ export default function AnalyticsPage() {
 
           {/* Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Total Revenue */}
-            <div className="glass glass-hover rounded-2xl p-6 border border-gray-800/50">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-3xl">💰</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Receita Total</p>
-                <p className="text-3xl font-bold gradient-text">
-                  {formatCurrency(data.summary.revenue)}
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  Comissão: <span className="text-warning-400 font-semibold">{formatCurrency(data.summary.commission)}</span>
-                </p>
-              </div>
-            </div>
+            {/* Card 1: Revenue Breakdown (Gross + Net) */}
+            <RevenueBreakdownCard
+              grossRevenue={data.summary.grossRevenue}
+              netRevenue={data.summary.revenue}
+              refundsTotal={data.refunds.total}
+              chargebacksTotal={data.chargebacks.total}
+              commission={data.summary.commission}
+            />
 
             {/* Card 2: Total Orders */}
             <div className="glass glass-hover rounded-2xl p-6 border border-gray-800/50">
