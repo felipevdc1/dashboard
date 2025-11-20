@@ -261,9 +261,9 @@ export default function AnalyticsPage() {
                 <p className="text-sm text-gray-400 mt-1">
                   Exibindo {filteredOrders.length} de {data.pagination.total} pedidos
                   {statusFilter !== 'all' && ' (filtrado)'}
-                  {data.pagination.totalPages > 1 && (
+                  {Math.ceil(data.pagination.total / data.pagination.limit) > 1 && (
                     <span className="ml-2">
-                      • Página {data.pagination.page} de {data.pagination.totalPages}
+                      • Página {data.pagination.page} de {Math.ceil(data.pagination.total / data.pagination.limit)}
                     </span>
                   )}
                 </p>
