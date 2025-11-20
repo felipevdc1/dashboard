@@ -97,8 +97,8 @@ export async function GET(request: NextRequest) {
     // Filter by date range if specified
     if (startDate && endDate) {
       query = query
-        .gte('created_at', `${startDate}T00:00:00`)
-        .lte('created_at', `${endDate}T23:59:59`);
+        .gte('created_at', `${startDate}T00:00:00-03:00`)
+        .lte('created_at', `${endDate}T23:59:59-03:00`);
     }
 
     const { data: orders, error } = await query;
