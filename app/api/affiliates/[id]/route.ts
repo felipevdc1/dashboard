@@ -16,7 +16,7 @@ import {
 } from '@/lib/affiliates/utils';
 import { affiliateLogger, cacheLogger, logger } from '@/lib/logger';
 import type { AffiliateDetails, AffiliateMonthlyMetrics, AffiliateAnalyticsResponse, AffiliateOrderItem } from '@/lib/affiliates/types';
-import { parsePrice, isOrderPaid, extractLocalDate } from '@/lib/cartpanda/utils';
+import { parsePrice, isOrderPaid, extractLocalDate, calculateRevenue } from '@/lib/cartpanda/utils';
 import type { CartPandaOrder } from '@/lib/cartpanda/types';
 
 export async function GET(
@@ -146,8 +146,17 @@ export async function GET(
         refunded: refundedOrders.length,
         chargebacks: chargebackOrders.length,
         pending: pendingOrders.length,
-        revenue: paidOrders.reduce((sum: number, o: any) => sum + parsePrice(o.total_price), 0),
-        commission: paidOrders.reduce((sum: number, o: any) => sum + parsePrice(o.affiliate_amount || '0'), 0),
+        revenue: calculateRevenue(affiliateOrders),
+        commission: affiliateOrders.reduce((sum: number, o: any) => {
+          // Skip refunded and chargeback orders for commission too
+          if ((o.refunds && o.refunds.length > 0) || o.chargeback_received === 1) {
+            return sum;
+          }
+          if (isOrderPaid(o)) {
+            return sum + parsePrice(o.affiliate_amount || '0');
+          }
+          return sum;
+        }, 0),
       };
 
       const refunds = {
