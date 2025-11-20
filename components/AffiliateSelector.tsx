@@ -11,16 +11,18 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import useSWR from 'swr';
 import type { AffiliateMetrics } from '@/lib/affiliates/types';
+import type { DateRange } from '@/lib/dateUtils';
 import { formatCurrency } from '@/lib/shared/utils';
 
 interface AffiliateSelectorProps {
   value: string | null; // Selected affiliate ID
   onChange: (affiliateId: string | null, affiliate: AffiliateMetrics | null) => void;
+  dateRange?: DateRange; // Optional date range filter
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function AffiliateSelector({ value, onChange }: AffiliateSelectorProps) {
+export default function AffiliateSelector({ value, onChange, dateRange }: AffiliateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -49,10 +51,18 @@ export default function AffiliateSelector({ value, onChange }: AffiliateSelector
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch affiliates with search
-  const searchQuery = debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : '';
+  // Fetch affiliates with search and date range
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.append('search', debouncedSearch);
+    if (dateRange?.startDate) params.append('start_date', dateRange.startDate);
+    if (dateRange?.endDate) params.append('end_date', dateRange.endDate);
+    const queryString = params.toString();
+    return queryString ? `?${queryString}` : '';
+  };
+
   const { data, error, isLoading } = useSWR(
-    isOpen ? `/api/affiliates${searchQuery}` : null,
+    isOpen ? `/api/affiliates${buildQueryString()}` : null,
     fetcher
   );
 

@@ -93,6 +93,7 @@ export default function AnalyticsPage() {
             <AffiliateSelector
               value={selectedAffiliateId}
               onChange={handleAffiliateChange}
+              dateRange={dateRange}
             />
           </div>
 
