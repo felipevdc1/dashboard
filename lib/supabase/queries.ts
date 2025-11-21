@@ -130,16 +130,49 @@ export async function calculateDashboardMetrics(
   const previousAvgTicket = previousRevenue / (previousOrderCount || 1);
   const avgTicketChange = calculatePercentageChange(previousAvgTicket, currentAvgTicket);
 
-  const conversionRate = 3.8;
-  const conversionChange = -1.2;
+  // Calculate loss rate (refunds + chargebacks) / total orders
+  const { refunds, chargebacks } = getRefundsAndChargebacks(currentOrders);
+  const { refunds: previousRefunds, chargebacks: previousChargebacks } = getRefundsAndChargebacks(previousOrders);
+
+  const currentLossRate = currentOrderCount > 0
+    ? ((refunds.count + chargebacks.count) / currentOrderCount) * 100
+    : 0;
+
+  const previousLossRate = previousOrderCount > 0
+    ? ((previousRefunds.count + previousChargebacks.count) / previousOrderCount) * 100
+    : 0;
+
+  const lossRateChange = calculatePercentageChange(previousLossRate, currentLossRate);
 
   const topProducts = getTopProducts(currentOrders);
   const topAffiliates = getTopAffiliates(currentOrders);
-  const { refunds, chargebacks } = getRefundsAndChargebacks(currentOrders);
 
   const revenueTrend = calculateDailyTrend(currentOrders, 'revenue');
   const ordersTrend = calculateDailyTrend(currentOrders, 'count');
   const ticketTrend = calculateDailyTrend(currentOrders, 'average');
+
+  // Calculate loss rate trend for last 7 days
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - i));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
+
+  const lossRateTrend = last7Days.map((date) => {
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const dayOrders = currentOrders.filter((order: any) => {
+      const orderDate = new Date(order.created_at);
+      return orderDate >= date && orderDate < nextDay;
+    });
+
+    const dayRefunds = dayOrders.filter((o: any) => o.refunds && o.refunds.length > 0).length;
+    const dayChargebacks = dayOrders.filter((o: any) => o.chargeback_received === 1).length;
+
+    return dayOrders.length > 0 ? ((dayRefunds + dayChargebacks) / dayOrders.length) * 100 : 0;
+  });
 
   // Monthly comparison
   const monthlyComparison = calculateMonthlyComparison(
@@ -167,10 +200,10 @@ export async function calculateDashboardMetrics(
       change: avgTicketChange,
       trend: ticketTrend,
     },
-    conversionRate: {
-      value: conversionRate,
-      change: conversionChange,
-      trend: [4.2, 4.0, 3.9, 4.1, 3.8, 3.7, 3.8],
+    lossRate: {
+      value: currentLossRate,
+      change: lossRateChange,
+      trend: lossRateTrend,
     },
     topProducts,
     topAffiliates,

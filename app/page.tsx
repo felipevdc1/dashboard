@@ -256,12 +256,12 @@ export default function Dashboard() {
           />
 
           <StatCard
-            title="Taxa de Conversão"
-            value={`${metrics.conversionRate.value.toFixed(1)}%`}
-            change={metrics.conversionRate.change}
-            trend={metrics.conversionRate.trend}
-            icon="📈"
-            color="primary"
+            title="Taxa de Perdas"
+            value={`${metrics.lossRate.value.toFixed(1)}%`}
+            change={metrics.lossRate.change}
+            trend={metrics.lossRate.trend}
+            icon="⚠️"
+            color="warning"
           />
         </div>
 

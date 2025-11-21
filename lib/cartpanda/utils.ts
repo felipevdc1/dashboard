@@ -48,14 +48,19 @@ export function calculateMetrics(
   const previousAvgTicket = previousRevenue / (previousOrderCount || 1);
   const avgTicketChange = calculatePercentageChange(previousAvgTicket, currentAvgTicket);
 
-  // Mock conversion rate for now (requires additional data like visits)
-  const conversionRate = 3.8;
-  const conversionChange = -1.2;
+  // Calculate loss rate (refunds + chargebacks) / total orders
+  const { refunds, chargebacks } = getRefundsAndChargebacks(currentOrders);
+
+  const currentLossRate = currentOrderCount > 0
+    ? ((refunds.count + chargebacks.count) / currentOrderCount) * 100
+    : 0;
+
+  // For now, no previous period comparison in this legacy file
+  const lossRateChange = 0;
+  const lossRateTrend = [0, 0, 0, 0, 0, 0, 0];
 
   const topProducts = getTopProducts(currentOrders);
   const topAffiliates = getTopAffiliates(currentOrders);
-
-  const { refunds, chargebacks } = getRefundsAndChargebacks(currentOrders);
 
   const revenueTrend = calculateDailyTrend(currentOrders, 'revenue');
   const ordersTrend = calculateDailyTrend(currentOrders, 'count');
@@ -86,10 +91,10 @@ export function calculateMetrics(
       change: avgTicketChange,
       trend: ticketTrend,
     },
-    conversionRate: {
-      value: conversionRate,
-      change: conversionChange,
-      trend: [4.2, 4.0, 3.9, 4.1, 3.8, 3.7, 3.8],
+    lossRate: {
+      value: currentLossRate,
+      change: lossRateChange,
+      trend: lossRateTrend,
     },
     topProducts,
     topAffiliates,

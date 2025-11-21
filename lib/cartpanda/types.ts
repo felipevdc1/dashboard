@@ -136,8 +136,8 @@ export interface DashboardMetrics {
     change: number;
     trend: number[];
   };
-  conversionRate: {
-    value: number;
+  lossRate: {
+    value: number; // Percentage of (refunds + chargebacks) / total orders
     change: number;
     trend: number[];
   };
