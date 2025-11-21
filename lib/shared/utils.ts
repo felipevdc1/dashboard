@@ -251,6 +251,76 @@ export function getRefundsAndChargebacks(orders: any[]) {
 }
 
 /**
+ * Get refunds and chargebacks statistics BY EVENT DATE (when they happened)
+ * This is the CORRECT way for dashboard metrics - shows financial impact by month
+ *
+ * Example: Order created Oct 25, refunded Nov 17 = counts in NOVEMBER (not October)
+ */
+export function getRefundsAndChargebacksByEventDate(
+  allOrders: any[],
+  startDate: string,
+  endDate: string
+) {
+  const totalRevenue = calculateRevenue(allOrders);
+
+  const refunds = allOrders.reduce(
+    (acc, order) => {
+      // Check if order has refunds array with items
+      if (order.refunds && order.refunds.length > 0) {
+        // Filter refunds that happened in the date range
+        const refundsInRange = order.refunds.filter((refund: any) => {
+          const processedDate = extractLocalDate(refund.processed_at);
+          return processedDate >= startDate && processedDate <= endDate;
+        });
+
+        if (refundsInRange.length > 0) {
+          // Sum all refunds in range for this order
+          const refundAmount = refundsInRange.reduce(
+            (sum: number, r: any) => sum + parseFloat(r.total_amount || r.sub_total || '0'),
+            0
+          );
+          return {
+            count: acc.count + refundsInRange.length,
+            total: acc.total + refundAmount,
+          };
+        }
+      }
+      return acc;
+    },
+    { count: 0, total: 0 }
+  );
+
+  const chargebacks = allOrders.reduce(
+    (acc, order) => {
+      // Check if order has chargeback in the date range
+      if (order.chargeback_at !== null && order.chargeback_at !== '') {
+        const chargebackDate = extractLocalDate(order.chargeback_at);
+        if (chargebackDate >= startDate && chargebackDate <= endDate) {
+          const chargebackAmount = parsePrice(order.total_price);
+          return {
+            count: acc.count + 1,
+            total: acc.total + chargebackAmount,
+          };
+        }
+      }
+      return acc;
+    },
+    { count: 0, total: 0 }
+  );
+
+  return {
+    refunds: {
+      ...refunds,
+      percentage: totalRevenue > 0 ? (refunds.total / totalRevenue) * 100 : 0,
+    },
+    chargebacks: {
+      ...chargebacks,
+      percentage: totalRevenue > 0 ? (chargebacks.total / totalRevenue) * 100 : 0,
+    },
+  };
+}
+
+/**
  * Calculate monthly comparison data for chart
  * Returns day-by-day comparison between current and previous month
  */

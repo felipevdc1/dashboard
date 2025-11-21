@@ -16,6 +16,7 @@ import {
   getTopProducts,
   getTopAffiliates,
   getRefundsAndChargebacks,
+  getRefundsAndChargebacksByEventDate,
   calculateMonthlyComparison,
   getRecentActivities,
 } from '../shared/utils';
@@ -25,12 +26,8 @@ import {
  * Returns ALL orders - filtering for paid/refunded/chargebacks is done by calculateRevenue()
  * Uses Brasilia timezone (UTC-3) for date filtering
  *
- * IMPORTANT: Filters by order creation date (created_at), NOT by refund/chargeback date.
- * This means:
- * - A pedido created in October and refunded in November = counted in October stats
- * - A pedido created in November and refunded in November = counted in November stats
- *
- * Rationale: Shows what happened to orders created in the period, not when losses occurred.
+ * NOTE: This function fetches by order creation date (created_at)
+ * Used for: Revenue, Order count, Top Products, Top Affiliates
  */
 async function fetchOrdersByDateRange(startDate: string, endDate: string) {
   const { data, error } = await supabase
@@ -45,6 +42,35 @@ async function fetchOrdersByDateRange(startDate: string, endDate: string) {
     throw new Error(`Failed to fetch orders: ${error.message}`);
   }
 
+  return data || [];
+}
+
+/**
+ * Fetch orders for refund/chargeback analysis
+ * Fetches a wider range (last 4 months) to catch old orders with recent refunds/chargebacks
+ * Example: Order from October that was refunded/chargebacked in November
+ */
+async function fetchOrdersForEventAnalysis(endDate: string) {
+  // Calculate start date: 4 months before endDate
+  const end = new Date(endDate);
+  const start = new Date(end);
+  start.setMonth(start.getMonth() - 4);
+
+  const startDate = start.toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .gte('created_at', `${startDate}T00:00:00-03:00`)
+    .lte('created_at', `${endDate}T23:59:59-03:00`)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Supabase query error:', error);
+    throw new Error(`Failed to fetch orders for event analysis: ${error.message}`);
+  }
+
+  console.log(`✅ Fetched ${data?.length || 0} orders for event analysis (last 4 months)`);
   return data || [];
 }
 
@@ -196,6 +222,9 @@ export async function calculateDashboardMetrics(
     monthRanges.previousMonth.startDate
   );
 
+  // Fetch orders for refund/chargeback analysis (wider range to catch old orders with recent events)
+  const ordersForEventAnalysis = await fetchOrdersForEventAnalysis(currentEndDate);
+
   // Fetch top cancellation reasons for current period
   const topCancellationReasons = await fetchTopCancellationReasons(currentStartDate, currentEndDate);
   console.log(`✅ Top cancellation reasons: ${topCancellationReasons.length}`);
@@ -217,8 +246,18 @@ export async function calculateDashboardMetrics(
   const avgTicketChange = calculatePercentageChange(previousAvgTicket, currentAvgTicket);
 
   // Calculate loss rate (refunds + chargebacks) / total orders
-  const { refunds, chargebacks } = getRefundsAndChargebacks(currentOrders);
-  const { refunds: previousRefunds, chargebacks: previousChargebacks } = getRefundsAndChargebacks(previousOrders);
+  // IMPORTANT: Use event date (when refund/chargeback happened), not order creation date
+  // Example: Order from Oct 25 refunded Nov 17 = counts in NOVEMBER, not October
+  const { refunds, chargebacks } = getRefundsAndChargebacksByEventDate(
+    ordersForEventAnalysis,
+    currentStartDate,
+    currentEndDate
+  );
+  const { refunds: previousRefunds, chargebacks: previousChargebacks } = getRefundsAndChargebacksByEventDate(
+    ordersForEventAnalysis,
+    previousStartDate,
+    previousEndDate
+  );
 
   const currentLossRate = currentOrderCount > 0
     ? ((refunds.count + chargebacks.count) / currentOrderCount) * 100
