@@ -24,6 +24,13 @@ import {
  * Fetch orders from Supabase for a date range
  * Returns ALL orders - filtering for paid/refunded/chargebacks is done by calculateRevenue()
  * Uses Brasilia timezone (UTC-3) for date filtering
+ *
+ * IMPORTANT: Filters by order creation date (created_at), NOT by refund/chargeback date.
+ * This means:
+ * - A pedido created in October and refunded in November = counted in October stats
+ * - A pedido created in November and refunded in November = counted in November stats
+ *
+ * Rationale: Shows what happened to orders created in the period, not when losses occurred.
  */
 async function fetchOrdersByDateRange(startDate: string, endDate: string) {
   const { data, error } = await supabase

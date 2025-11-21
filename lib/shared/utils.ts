@@ -224,8 +224,9 @@ export function getRefundsAndChargebacks(orders: any[]) {
 
   const chargebacks = orders.reduce(
     (acc, order) => {
-      // Check if order has chargeback (chargeback_received = 1)
-      if (order.chargeback_received === 1) {
+      // Check if order has chargeback (chargeback_at is set)
+      // NOTE: chargeback_received field is always 0, use chargeback_at instead
+      if (order.chargeback_at !== null && order.chargeback_at !== '') {
         const chargebackAmount = parsePrice(order.total_price);
         return {
           count: acc.count + 1,
