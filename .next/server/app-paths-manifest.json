@@ -1,3 +1,27 @@
 {
-  "/api/metrics/route": "app/api/metrics/route.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/debug/route": "app/api/debug/route.js",
+  "/api/health/route": "app/api/health/route.js",
+  "/api/affiliates/[id]/route": "app/api/affiliates/[id]/route.js",
+  "/api/affiliates/route": "app/api/affiliates/route.js",
+  "/api/analytics/refunds-chargebacks/route": "app/api/analytics/refunds-chargebacks/route.js",
+  "/api/tools/cancelamentos/route": "app/api/tools/cancelamentos/route.js",
+  "/api/webhook/cartpanda/route": "app/api/webhook/cartpanda/route.js",
+  "/api/validate/route": "app/api/validate/route.js",
+  "/api/metrics/route": "app/api/metrics/route.js",
+  "/api/reports/chargebacks/route": "app/api/reports/chargebacks/route.js",
+  "/api/reports/summary/route": "app/api/reports/summary/route.js",
+  "/api/reports/refunds/route": "app/api/reports/refunds/route.js",
+  "/api/sync/incremental/route": "app/api/sync/incremental/route.js",
+  "/api/tools/cancelamentos/sync/route": "app/api/tools/cancelamentos/sync/route.js",
+  "/api/sync/route": "app/api/sync/route.js",
+  "/analytics/page": "app/analytics/page.js",
+  "/analytics/refunds-chargebacks/page": "app/analytics/refunds-chargebacks/page.js",
+  "/afiliados/[slug]/page": "app/afiliados/[slug]/page.js",
+  "/afiliados/page": "app/afiliados/page.js",
+  "/ferramentas/page": "app/ferramentas/page.js",
+  "/relatorios/page": "app/relatorios/page.js",
+  "/page": "app/page.js",
+  "/relatorios/reembolsos/page": "app/relatorios/reembolsos/page.js",
+  "/relatorios/chargebacks/page": "app/relatorios/chargebacks/page.js"
 }

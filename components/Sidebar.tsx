@@ -34,6 +34,11 @@ const navItems: NavItem[] = [
     icon: '📈',
   },
   {
+    label: 'Análise RB/CB',
+    href: '/analytics/refunds-chargebacks',
+    icon: '⚠️',
+  },
+  {
     label: 'Ferramentas',
     href: '/ferramentas',
     icon: '🛠️',

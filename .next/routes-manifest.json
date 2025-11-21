@@ -20,6 +20,14 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/afiliados/[slug]",
+      "regex": "^/afiliados/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/afiliados/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/api/affiliates/[id]",
       "regex": "^/api/affiliates/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -48,10 +56,40 @@
       "namedRegex": "^/afiliados(?:/)?$"
     },
     {
+      "page": "/analytics",
+      "regex": "^/analytics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/analytics(?:/)?$"
+    },
+    {
+      "page": "/analytics/refunds-chargebacks",
+      "regex": "^/analytics/refunds\\-chargebacks(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/analytics/refunds\\-chargebacks(?:/)?$"
+    },
+    {
       "page": "/ferramentas",
       "regex": "^/ferramentas(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/ferramentas(?:/)?$"
+    },
+    {
+      "page": "/relatorios",
+      "regex": "^/relatorios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/relatorios(?:/)?$"
+    },
+    {
+      "page": "/relatorios/chargebacks",
+      "regex": "^/relatorios/chargebacks(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/relatorios/chargebacks(?:/)?$"
+    },
+    {
+      "page": "/relatorios/reembolsos",
+      "regex": "^/relatorios/reembolsos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/relatorios/reembolsos(?:/)?$"
     }
   ],
   "dataRoutes": [],
