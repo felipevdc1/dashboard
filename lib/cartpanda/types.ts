@@ -147,6 +147,7 @@ export interface DashboardMetrics {
   };
   topProducts: ProductPerformance[];
   topAffiliates: AffiliatePerformance[];
+  topCancellationReasons: CancellationReason[];
   refunds: {
     count: number;
     total: number;
@@ -184,4 +185,13 @@ export interface RecentActivity {
   description: string;
   amount?: number;
   timestamp: string;
+}
+
+export interface CancellationReason {
+  motivo: string;
+  count: number;
+  percentage: number;
+  tipo: 'refund' | 'chargeback' | 'both';
+  refundCount?: number;
+  chargebackCount?: number;
 }

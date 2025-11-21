@@ -83,6 +83,81 @@ async function fetchOrdersForMonthlyComparison(
 }
 
 /**
+ * Fetch top cancellation reasons from order_notes table
+ * Returns top 5 reasons with count and percentage breakdown by type
+ */
+async function fetchTopCancellationReasons(startDate: string, endDate: string) {
+  const { data, error } = await supabase
+    .from('order_notes')
+    .select(`
+      motivo,
+      tipo,
+      orders!inner (
+        created_at
+      )
+    `)
+    .gte('orders.created_at', `${startDate}T00:00:00-03:00`)
+    .lte('orders.created_at', `${endDate}T23:59:59-03:00`);
+
+  if (error) {
+    console.error('Error fetching cancellation reasons:', error);
+    return [];
+  }
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Group by motivo and count by tipo
+  const reasonsMap = new Map<string, { refundCount: number; chargebackCount: number }>();
+
+  data.forEach((note: any) => {
+    const motivo = note.motivo || 'Não especificado';
+    const existing = reasonsMap.get(motivo) || { refundCount: 0, chargebackCount: 0 };
+
+    if (note.tipo === 'refund') {
+      existing.refundCount++;
+    } else if (note.tipo === 'chargeback') {
+      existing.chargebackCount++;
+    }
+
+    reasonsMap.set(motivo, existing);
+  });
+
+  const totalCount = data.length;
+
+  // Convert to array and sort by total count
+  const reasons = Array.from(reasonsMap.entries())
+    .map(([motivo, counts]) => {
+      const count = counts.refundCount + counts.chargebackCount;
+      const percentage = (count / totalCount) * 100;
+
+      // Determine tipo based on which is more prevalent
+      let tipo: 'refund' | 'chargeback' | 'both';
+      if (counts.refundCount > 0 && counts.chargebackCount > 0) {
+        tipo = 'both';
+      } else if (counts.refundCount > 0) {
+        tipo = 'refund';
+      } else {
+        tipo = 'chargeback';
+      }
+
+      return {
+        motivo,
+        count,
+        percentage,
+        tipo,
+        refundCount: counts.refundCount,
+        chargebackCount: counts.chargebackCount,
+      };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5); // Top 5
+
+  return reasons;
+}
+
+/**
  * Calculate all dashboard metrics from Supabase
  * This is the main function that replaces CartPanda API calls
  */
@@ -113,6 +188,10 @@ export async function calculateDashboardMetrics(
     monthRanges.currentMonth.startDate,
     monthRanges.previousMonth.startDate
   );
+
+  // Fetch top cancellation reasons for current period
+  const topCancellationReasons = await fetchTopCancellationReasons(currentStartDate, currentEndDate);
+  console.log(`✅ Top cancellation reasons: ${topCancellationReasons.length}`);
 
   const queryDuration = Date.now() - startTime;
   console.log(`⚡ Supabase queries completed in ${queryDuration}ms`);
@@ -220,6 +299,7 @@ export async function calculateDashboardMetrics(
     },
     topProducts,
     topAffiliates,
+    topCancellationReasons,
     refunds,
     chargebacks,
     monthlyComparison,

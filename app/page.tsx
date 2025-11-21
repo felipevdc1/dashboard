@@ -9,6 +9,7 @@ import StatCard from '@/components/StatCard';
 import RevenueChart from '@/components/RevenueChart';
 import TopProducts from '@/components/TopProducts';
 import AffiliatesTable from '@/components/AffiliatesTable';
+import TopCancellationReasons from '@/components/TopCancellationReasons';
 import RefundChargebackCards from '@/components/RefundChargebackCards';
 import ActivityFeed from '@/components/ActivityFeed';
 import DateRangePicker from '@/components/DateRangePicker';
@@ -280,6 +281,13 @@ export default function Dashboard() {
           <TopProducts products={metrics.topProducts} />
           <AffiliatesTable affiliates={metrics.topAffiliates} />
         </div>
+
+        {/* Top Cancellation Reasons */}
+        {metrics.topCancellationReasons.length > 0 && (
+          <div className="mb-8">
+            <TopCancellationReasons reasons={metrics.topCancellationReasons} />
+          </div>
+        )}
 
         {/* Refunds and Chargebacks */}
         <RefundChargebackCards

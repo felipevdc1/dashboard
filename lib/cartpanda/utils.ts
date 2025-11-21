@@ -111,6 +111,7 @@ export function calculateMetrics(
     },
     topProducts,
     topAffiliates,
+    topCancellationReasons: [], // Legacy file doesn't have access to order_notes
     refunds,
     chargebacks,
     monthlyComparison,
