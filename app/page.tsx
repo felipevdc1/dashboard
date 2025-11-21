@@ -257,6 +257,7 @@ export default function Dashboard() {
 
           <StatCard
             title="Taxa de Perdas"
+            subtitle={`rb ${metrics.lossRate.breakdown.refundRate.toFixed(1)}% | cb ${metrics.lossRate.breakdown.chargebackRate.toFixed(1)}%`}
             value={`${metrics.lossRate.value.toFixed(1)}%`}
             change={metrics.lossRate.change}
             trend={metrics.lossRate.trend}

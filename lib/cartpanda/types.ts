@@ -140,6 +140,10 @@ export interface DashboardMetrics {
     value: number; // Percentage of (refunds + chargebacks) / total orders
     change: number;
     trend: number[];
+    breakdown: {
+      refundRate: number; // Individual refund percentage
+      chargebackRate: number; // Individual chargeback percentage
+    };
   };
   topProducts: ProductPerformance[];
   topAffiliates: AffiliatePerformance[];

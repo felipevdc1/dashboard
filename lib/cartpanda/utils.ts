@@ -55,6 +55,15 @@ export function calculateMetrics(
     ? ((refunds.count + chargebacks.count) / currentOrderCount) * 100
     : 0;
 
+  // Calculate individual rates for breakdown
+  const refundRate = currentOrderCount > 0
+    ? (refunds.count / currentOrderCount) * 100
+    : 0;
+
+  const chargebackRate = currentOrderCount > 0
+    ? (chargebacks.count / currentOrderCount) * 100
+    : 0;
+
   // For now, no previous period comparison in this legacy file
   const lossRateChange = 0;
   const lossRateTrend = [0, 0, 0, 0, 0, 0, 0];
@@ -95,6 +104,10 @@ export function calculateMetrics(
       value: currentLossRate,
       change: lossRateChange,
       trend: lossRateTrend,
+      breakdown: {
+        refundRate,
+        chargebackRate,
+      },
     },
     topProducts,
     topAffiliates,

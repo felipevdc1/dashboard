@@ -144,6 +144,15 @@ export async function calculateDashboardMetrics(
 
   const lossRateChange = calculatePercentageChange(previousLossRate, currentLossRate);
 
+  // Calculate individual rates for breakdown
+  const refundRate = currentOrderCount > 0
+    ? (refunds.count / currentOrderCount) * 100
+    : 0;
+
+  const chargebackRate = currentOrderCount > 0
+    ? (chargebacks.count / currentOrderCount) * 100
+    : 0;
+
   const topProducts = getTopProducts(currentOrders);
   const topAffiliates = getTopAffiliates(currentOrders);
 
@@ -204,6 +213,10 @@ export async function calculateDashboardMetrics(
       value: currentLossRate,
       change: lossRateChange,
       trend: lossRateTrend,
+      breakdown: {
+        refundRate,
+        chargebackRate,
+      },
     },
     topProducts,
     topAffiliates,
