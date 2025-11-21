@@ -7,6 +7,98 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 E-commerce analytics dashboard built with Next.js 15 that syncs orders from CartPanda API v3 to Supabase PostgreSQL for fast querying. Achieves 100x performance improvement (1.5s vs 2-3 minutes) through database caching.
 
 **Key Architecture:** CartPanda API → Daily Sync → Supabase → Next.js API Routes → React Dashboard
+### 🎯 Regras de Ouro do Desenvolvimento
+
+#### Regra 1: "Think Twice, Code Once"
+Antes de escrever qualquer linha, responda mentalmente:
+- Por que estou fazendo isso?
+- O que mais será afetado?
+- Existe uma solução melhor?
+
+#### Regra 2: "Agents First"
+Você possui diversos agentes à sua disposição. Sempre use o máximo de agentes possíveis, com suas especialidades.
+
+### ⚠️ REGRAS ABSOLUTAS DE RIGOR (NON-NEGOTIABLE)
+
+Estas regras existem porque erros de precisão quebram a confiança. NUNCA as viole.
+
+#### Regra Absoluta 1: "Never Trust CLI Output Blindly"
+**Problema:** CLIs podem retornar URLs temporárias, paths relativos ou informações contextuais.
+**Solução obrigatória:**
+1. **SEMPRE** verificar documentação existente ANTES de reportar informações críticas
+2. **SEMPRE** usar Grep para buscar referências no codebase
+3. **NUNCA** assumir que output de comando = verdade absoluta
+4. **NUNCA** reportar URLs de deployment como "produção" sem verificar
+
+**Exemplo do erro:**
+```bash
+# ❌ ERRADO: Copiar cegamente
+vercel --prod
+> https://dashboard-abc123-project.vercel.app
+# Reportar: "URL de produção: https://dashboard-abc123-..."
+
+# ✅ CORRETO: Verificar primeiro
+grep -r "vercel.app" docs/ config/
+# Encontrar: https://dashboard-eight-alpha-74.vercel.app
+# Confirmar em múltiplos arquivos ANTES de reportar
+```
+
+#### Regra Absoluta 2: "Double-Check Critical Information"
+**Informações críticas que EXIGEM verificação:**
+- ✅ URLs de produção (grep docs, configs, sessions)
+- ✅ Comandos destrutivos (git push --force, rm -rf, etc)
+- ✅ Valores de configuração (API keys, tokens, endpoints)
+- ✅ Números reportados ao usuário (revenue, counts, etc)
+- ✅ Status de deploys (success != accessible)
+
+**Workflow obrigatório:**
+1. Coletar informação de fonte primária (CLI, API, etc)
+2. Buscar confirmação em documentação (`grep`, `read`)
+3. Verificar consistência entre fontes
+4. **SÓ ENTÃO** reportar ao usuário
+
+#### Regra Absoluta 3: "Accuracy Over Speed"
+**Princípio:** É melhor dizer "deixe-me verificar" do que dar informação errada.
+- ❌ Responder rápido com informação imprecisa
+- ✅ Pausar 30 segundos para grep/read e responder com certeza
+- ❌ "Provavelmente é X"
+- ✅ "Verificando... confirmado que é X (encontrado em Y e Z)"
+
+**Frases proibidas sem verificação:**
+- "A URL de produção é..."
+- "O deploy foi bem-sucedido em..."
+- "O valor atual é..."
+- "Isso está configurado em..."
+
+#### Regra Absoluta 4: "Production URLs Have Patterns"
+**Red flags de URLs temporárias:**
+- Hash aleatório no subdomínio: `project-abc123xyz-user.vercel.app` ❌
+- Timestamp no nome: `deploy-20250611-...` ❌
+- Output direto de `vercel --prod` sem confirmar ❌
+
+**Características de URLs de produção:**
+- Nome consistente: `dashboard-eight-alpha-74.vercel.app` ✅
+- Documentada em múltiplos lugares ✅
+- Referenciada em webhooks/configs ✅
+- Domínio customizado (se aplicável) ✅
+
+**Comando de verificação obrigatório:**
+```bash
+# SEMPRE executar antes de reportar URL de produção:
+grep -r "vercel.app" docs/ config/ --include="*.md" --include="*.json"
+```
+
+## Production URLs
+
+**Dashboard Principal:**
+- Production: `https://dashboard-eight-alpha-74.vercel.app`
+- Deployment URLs: `https://dashboard-{hash}-felipevdc1s-projects.vercel.app` (temporárias, NÃO usar)
+
+**Por que isso importa:**
+- Webhooks usam URL de produção permanente
+- Documentação referencia URL estável
+- Deployment URLs mudam a cada push
+- Reportar URL errada = webhooks quebrados = sistema quebrado
 
 ## Essential Commands
 
